@@ -59,8 +59,18 @@ public class ImageRendererExecutor extends Worker {
         super("Image Renderer");
     }
 
+    // Links copied from the Discord client point to its media proxy with format=webp, and ImageIO cannot decode WebP.
+    // The proxy can convert to any format, so ask it for PNG instead.
+    @SuppressWarnings("deprecation")
+    private static URL requestDecodableFormat(URL url) throws IOException {
+        if (!"media.discordapp.net".equalsIgnoreCase(url.getHost())) {
+            return url;
+        }
+        return new URL(url.toString().replaceAll("(?i)([?&]format=)[^&#]*", "$1png"));
+    }
+
     private static URLConnection connecting(URL url) throws IOException {
-        final URLConnection connection = url.openConnection();
+        final URLConnection connection = requestDecodableFormat(url).openConnection();
         connection.addRequestProperty("User-Agent",
                 "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:25.0) Gecko/20100101 Firefox/25.0");
         connection.connect();
